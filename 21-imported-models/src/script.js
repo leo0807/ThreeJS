@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 /**
  * Base
  */
@@ -14,17 +15,43 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+// Test Sphere
+
 /**
  * Models
  */
-
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('/draco/');
 const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
+
+let mixer = null;
 gltfLoader.load(
     // '/models/Duck/glTF/Duck.gltf',
-    '/models/Duck/glTF-Binary/Duck.glb',
-
+    // '/models/Duck/glTF-Binary/Duck.glb',
+    // '/models/Duck/glTF-Draco/Duck.gltf',
+    // '/models/FlightHelmet/glTF/FlightHelmet.gltf',
+    '/models/Fox/glTF/Fox.gltf',
     (gltf) => {
-        scene.add(gltf.scene.children[0])
+        // for of 循环可能会导致循环顺序错误，可以考虑其他方式循环
+        // for (const children of gltf.scene.children) {
+        //     scene.add(children);
+        // }
+
+        // while (gltf.scene.children.length > 0) {
+        //     scene.add(gltf.scene.children[0]);
+        // }
+
+        // const children = [...gltf.scene.children];
+        // for (const child of children) {
+        //     scene.add(child);
+        // }
+        gltf.scene.scale.set(0.025, 0.025, 0.025);
+        scene.add(gltf.scene);
+        mixer = new THREE.AnimationMixer(gltf.scene);
+        const action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+
     },
     (progress) => {
         console.log('progress');
@@ -122,7 +149,7 @@ const tick = () => {
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - previousTime
     previousTime = elapsedTime
-
+    if (mixer !== null) mixer.update(deltaTime);
     // Update controls
     controls.update()
 
